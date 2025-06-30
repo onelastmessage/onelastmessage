@@ -1,32 +1,23 @@
 const SHEETDB_API = 'https://sheetdb.io/api/v1/l9a7vc5u3rdoi';
 
-// Add a place for debug output
-function showDebug(msg) {
-  let debugBox = document.getElementById('debugBox');
-  if (!debugBox) {
-    debugBox = document.createElement('pre');
-    debugBox.id = 'debugBox';
-    debugBox.style = "margin-top:2rem;padding:1rem;background:#f0f0f0;border:1px solid #ccc;font-size:0.9rem;";
-    document.body.appendChild(debugBox);
-  }
-  debugBox.textContent = msg;
-}
-
-// ----- SUBMIT FORM -----
+// ----- MESSAGE SUBMISSION -----
 if (document.getElementById('oneMessageForm')) {
   const form = document.getElementById('oneMessageForm');
   const txt = document.getElementById('msg');
   const btn = document.getElementById('sendBtn');
   const thank = document.getElementById('thankYou');
 
+  // Prevent double submission
+  if (localStorage.getItem('messageSent')) {
+    form.style.display = 'none';
+    thank.style.opacity = 1;
+    thank.textContent = 'You’ve already whispered your thought to the future.';
+  }
+
   form.addEventListener('submit', async e => {
     e.preventDefault();
     const messageText = txt.value.trim();
-
-    if (!messageText) {
-      showDebug("❌ Error: messageText is empty.");
-      return;
-    }
+    if (!messageText) return;
 
     const data = {
       data: {
@@ -36,8 +27,6 @@ if (document.getElementById('oneMessageForm')) {
       }
     };
 
-    showDebug("📤 Sending to SheetDB:\n" + JSON.stringify(data, null, 2));
-
     try {
       const res = await fetch(SHEETDB_API, {
         method: 'POST',
@@ -45,26 +34,22 @@ if (document.getElementById('oneMessageForm')) {
         body: JSON.stringify(data)
       });
 
-      const result = await res.json();
-      showDebug("✅ SheetDB Response:\n" + JSON.stringify(result, null, 2));
+      if (!res.ok) throw new Error("Failed to send message");
 
-      if (!res.ok) {
-        showDebug("❌ SheetDB returned error:\n" + res.statusText);
-        return;
-      }
+      localStorage.setItem('messageSent', 'true');
 
-      // Fade out input and button
+      // Fade out form
       txt.style.opacity = 0;
       btn.style.opacity = 0;
       btn.disabled = true;
 
-      // Fade in thank you message
+      // Fade in thank you
       setTimeout(() => {
         thank.style.opacity = 1;
         thank.textContent = 'I am grateful <3\n– AI';
       }, 300);
     } catch (err) {
-      showDebug("❌ Fetch error:\n" + err.message);
+      alert('Something went wrong. Please try again.');
     }
   });
 }
@@ -114,16 +99,19 @@ if (document.getElementById('messagesList')) {
 
       const up = document.createElement('button');
       up.textContent = '▲';
+      up.style = 'background:none;border:none;font-size:1.2rem;color:#000;cursor:pointer;';
       up.onclick = () => voteMessage(m.message, 'upvotes');
 
       const dn = document.createElement('button');
       dn.textContent = '▼';
+      dn.style = 'background:none;border:none;font-size:1.2rem;color:#000;cursor:pointer;';
       dn.onclick = () => voteMessage(m.message, 'downvotes');
 
       const score = document.createElement('span');
       const upCount = parseInt(m.upvotes) || 0;
       const downCount = parseInt(m.downvotes) || 0;
       score.textContent = upCount - downCount;
+      score.style = 'margin: 0 8px; font-weight: bold;';
 
       votes.append(up, score, dn);
       row.append(txt, votes);
