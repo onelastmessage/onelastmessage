@@ -1,1 +1,85 @@
+/* RESET & BASE */
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: Arial, sans-serif;
+  color: #222;
+  background: #fff;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+a { text-decoration: none; color: #222; }
+button { cursor: pointer; }
 
+/* HEADER */
+header {
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+header nav a {
+  margin-right: 1.5rem;
+  font-weight: bold;
+}
+
+/* MAIN */
+main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* FORM */
+form { display: flex; flex-direction: column; }
+textarea {
+  resize: none;
+  padding: .75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-height: 6rem;
+  margin-bottom: 1rem;
+  opacity: 1;
+  transition: opacity .3s ease;
+}
+button {
+  padding: .75rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background: #222;
+  color: #fff;
+  transition: background .2s, opacity .3s ease;
+}
+button:hover:not(:disabled) { background: #555; }
+button:disabled { background: #999; cursor: default; opacity: .7; }
+
+/* THANK YOU MESSAGE */
+#thankYou {
+  opacity: 0;
+  transition: opacity .5s ease;
+  text-align: center;
+  font-size: 1.25rem;
+  margin-top: 1rem;
+}
+
+/* MESSAGE LIST (messages.html) */
+.message {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.votes {
+  display: flex;
+  align-items: center;
+}
+.votes button {
+  background: none;
+  font-size: 1.25rem;
+  margin: 0 .5rem;
+}
+.votes span { font-weight: bold; }
