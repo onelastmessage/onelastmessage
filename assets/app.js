@@ -53,7 +53,7 @@ if (document.getElementById('oneMessageForm')) {
 
       setTimeout(() => {
         thank.style.opacity = 1;
-        thank.textContent = 'I am grateful <3\n– AI';
+        thank.textContent = 'thank you';
       }, 300);
     } catch (err) {
       alert('Something went wrong. Please try again.');
