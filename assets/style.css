@@ -1,43 +1,52 @@
-
-* { margin:0; padding:0; box-sizing:border-box; }
 body {
-  font-family: sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   margin: 0;
-  background: #fff;
+  background: #fdfdfd;
   color: #111;
 }
 
 header {
-  background: #f2f2f2;
-  padding: 1rem;
+  background: #ffffff;
+  padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid #eee;
 }
 
 .left-link, .right-link {
   text-decoration: none;
-  color: black;
-  font-weight: bold;
+  color: #111;
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
 main {
-  padding: 2rem;
+  padding: 3rem 1rem;
+  max-width: 700px;
+  margin: 0 auto;
 }
 
 form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  max-width: 600px;
-  margin: 0 auto;
 }
 
 textarea {
   padding: 1rem;
   font-size: 1rem;
   width: 100%;
-  min-height: 100px;
+  min-height: 120px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: vertical;
+  transition: border 0.2s;
+}
+
+textarea:focus {
+  border-color: #999;
+  outline: none;
 }
 
 button {
@@ -46,19 +55,52 @@ button {
   background: black;
   color: white;
   border: none;
+  border-radius: 6px;
   cursor: pointer;
+  transition: background 0.2s;
+  width: fit-content;
 }
 
 button:hover {
   background: #333;
 }
 
+#thankYou {
+  margin-top: 2rem;
+  font-size: 1.2rem;
+  text-align: center;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+h1 {
+  font-size: 1.75rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+#messagesList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .message {
-  padding: 1rem;
-  border-bottom: 1px solid #ccc;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #ddd;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.message > div:first-child {
+  flex: 1;
+  margin-right: 1rem;
+  font-size: 1rem;
+  line-height: 1.4;
 }
 
 .votes {
@@ -69,18 +111,19 @@ button:hover {
 
 .votes button {
   background: none;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   color: black;
   border: none;
   cursor: pointer;
 }
 
 .votes button:hover {
-  color: #666;
+  color: #777;
 }
 
 .votes span {
   font-weight: bold;
+  font-size: 1rem;
   min-width: 2ch;
   text-align: center;
 }
