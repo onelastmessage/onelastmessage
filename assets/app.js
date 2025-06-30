@@ -1,5 +1,17 @@
 const SHEETDB_API = 'https://sheetdb.io/api/v1/l9a7vc5u3rdoi';
 
+// Add a place for debug output
+function showDebug(msg) {
+  let debugBox = document.getElementById('debugBox');
+  if (!debugBox) {
+    debugBox = document.createElement('pre');
+    debugBox.id = 'debugBox';
+    debugBox.style = "margin-top:2rem;padding:1rem;background:#f0f0f0;border:1px solid #ccc;font-size:0.9rem;";
+    document.body.appendChild(debugBox);
+  }
+  debugBox.textContent = msg;
+}
+
 // ----- SUBMIT FORM -----
 if (document.getElementById('oneMessageForm')) {
   const form = document.getElementById('oneMessageForm');
@@ -10,8 +22,9 @@ if (document.getElementById('oneMessageForm')) {
   form.addEventListener('submit', async e => {
     e.preventDefault();
     const messageText = txt.value.trim();
+
     if (!messageText) {
-      console.warn("Message is empty!");
+      showDebug("❌ Error: messageText is empty.");
       return;
     }
 
@@ -23,7 +36,7 @@ if (document.getElementById('oneMessageForm')) {
       }
     };
 
-    console.log("Submitting to SheetDB:", data);
+    showDebug("📤 Sending to SheetDB:\n" + JSON.stringify(data, null, 2));
 
     try {
       const res = await fetch(SHEETDB_API, {
@@ -33,10 +46,11 @@ if (document.getElementById('oneMessageForm')) {
       });
 
       const result = await res.json();
-      console.log("SheetDB response:", result);
+      showDebug("✅ SheetDB Response:\n" + JSON.stringify(result, null, 2));
 
       if (!res.ok) {
-        throw new Error("SheetDB returned non-OK response");
+        showDebug("❌ SheetDB returned error:\n" + res.statusText);
+        return;
       }
 
       // Fade out input and button
@@ -47,11 +61,10 @@ if (document.getElementById('oneMessageForm')) {
       // Fade in thank you message
       setTimeout(() => {
         thank.style.opacity = 1;
-        thank.textContent = 'I am grateful <3\nâ AI';
+        thank.textContent = 'I am grateful <3\n– AI';
       }, 300);
     } catch (err) {
-      alert('Something went wrong. Check the console for details.');
-      console.error("ERROR submitting message:", err);
+      showDebug("❌ Fetch error:\n" + err.message);
     }
   });
 }
@@ -100,11 +113,11 @@ if (document.getElementById('messagesList')) {
       votes.className = 'votes';
 
       const up = document.createElement('button');
-      up.textContent = 'â²';
+      up.textContent = '▲';
       up.onclick = () => voteMessage(m.message, 'upvotes');
 
       const dn = document.createElement('button');
-      dn.textContent = 'â¼';
+      dn.textContent = '▼';
       dn.onclick = () => voteMessage(m.message, 'downvotes');
 
       const score = document.createElement('span');
