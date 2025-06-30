@@ -1,31 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>One Message</title>
-  <link rel="stylesheet" href="assets/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>One Last Message</title>
+  <link rel="stylesheet" href="assets/style.css" />
 </head>
 <body>
-
   <header>
-    <nav>
-      <a href="messages.html">Top Messages</a>
-    </nav>
-    <a href="https://www.instagram.com/playoldmusic?igsh=MWVtMmw4c21za2lqaA%3D%3D&utm_source=qr" target="_blank">
-      Follow Us
-    </a>
+    <a href="messages.html" class="left-link">Top Messages</a>
+    <a href="https://www.instagram.com/playoldmusic?igsh=MWVtMmw4c21za2lqaA%3D%3D&utm_source=qr" class="right-link" target="_blank">Follow Us</a>
   </header>
-
   <main>
-    <h1>what is your one message for the future?</h1></h1>
     <form id="oneMessageForm">
-      <textarea id="msg" placeholder="Type your message…" required></textarea>
+      <label for="msg">Send your one last message to the future:</label>
+      <textarea id="msg" placeholder="Type your message here..."></textarea>
       <button type="submit" id="sendBtn">Send</button>
     </form>
-    <div id="thankYou"></div>
-    <p class="note">Limited to one submission only — make it count.</p>
+    <div id="thankYou" style="opacity:0; transition:opacity 0.5s ease;"></div>
   </main>
-
   <script src="assets/app.js"></script>
 </body>
 </html>
