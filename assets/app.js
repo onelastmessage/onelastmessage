@@ -1,6 +1,6 @@
 const SHEETDB_API = 'https://sheetdb.io/api/v1/l9a7vc5u3rdoi';
 
-// Handle form submission
+// ----- SUBMIT FORM -----
 if (document.getElementById('oneMessageForm')) {
   const form = document.getElementById('oneMessageForm');
   const txt = document.getElementById('msg');
@@ -9,11 +9,15 @@ if (document.getElementById('oneMessageForm')) {
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
-    const message = txt.value.trim();
-    if (!message) return;
+    const messageText = txt.value.trim();
+    if (!messageText) return;
 
     const data = {
-      data: { message, upvotes: 0, downvotes: 0 }
+      data: {
+        message: messageText,
+        upvotes: 0,
+        downvotes: 0
+      }
     };
 
     try {
@@ -23,34 +27,38 @@ if (document.getElementById('oneMessageForm')) {
         body: JSON.stringify(data)
       });
 
+      // Fade out input and button
       txt.style.opacity = 0;
       btn.style.opacity = 0;
       btn.disabled = true;
 
+      // Fade in thank you message
       setTimeout(() => {
         thank.style.opacity = 1;
-        thank.textContent = 'I am grateful <3\n– AI';
+        thank.textContent = 'I am grateful <3\nâ AI';
       }, 300);
     } catch (err) {
-      alert('Something went wrong.');
+      alert('Something went wrong. Try again later.');
       console.error(err);
     }
   });
 }
 
-// Handle message rendering and voting
+// ----- DISPLAY TOP MESSAGES -----
 if (document.getElementById('messagesList')) {
   const list = document.getElementById('messagesList');
 
   async function fetchMessages() {
     const res = await fetch(SHEETDB_API);
-    return await res.json();
+    const msgs = await res.json();
+    return msgs;
   }
 
   async function voteMessage(message, type) {
     const all = await fetchMessages();
     const match = all.find(m => m.message === message);
     if (!match) return;
+
     const newCount = (parseInt(match[type]) || 0) + 1;
 
     await fetch(`${SHEETDB_API}/message/${encodeURIComponent(message)}`, {
@@ -65,7 +73,7 @@ if (document.getElementById('messagesList')) {
   async function render() {
     const msgs = await fetchMessages();
     const sorted = msgs
-      .filter(m => m.message)
+      .filter(m => m.message) // Only show rows with a message
       .sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
 
     list.innerHTML = '';
@@ -80,11 +88,11 @@ if (document.getElementById('messagesList')) {
       votes.className = 'votes';
 
       const up = document.createElement('button');
-      up.textContent = '▲';
+      up.textContent = 'â²';
       up.onclick = () => voteMessage(m.message, 'upvotes');
 
       const dn = document.createElement('button');
-      dn.textContent = '▼';
+      dn.textContent = 'â¼';
       dn.onclick = () => voteMessage(m.message, 'downvotes');
 
       const score = document.createElement('span');
