@@ -10,7 +10,10 @@ if (document.getElementById('oneMessageForm')) {
   form.addEventListener('submit', async e => {
     e.preventDefault();
     const messageText = txt.value.trim();
-    if (!messageText) return;
+    if (!messageText) {
+      console.warn("Message is empty!");
+      return;
+    }
 
     const data = {
       data: {
@@ -20,12 +23,21 @@ if (document.getElementById('oneMessageForm')) {
       }
     };
 
+    console.log("Submitting to SheetDB:", data);
+
     try {
-      await fetch(SHEETDB_API, {
+      const res = await fetch(SHEETDB_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
+
+      const result = await res.json();
+      console.log("SheetDB response:", result);
+
+      if (!res.ok) {
+        throw new Error("SheetDB returned non-OK response");
+      }
 
       // Fade out input and button
       txt.style.opacity = 0;
@@ -38,8 +50,8 @@ if (document.getElementById('oneMessageForm')) {
         thank.textContent = 'I am grateful <3\nâ AI';
       }, 300);
     } catch (err) {
-      alert('Something went wrong. Try again later.');
-      console.error(err);
+      alert('Something went wrong. Check the console for details.');
+      console.error("ERROR submitting message:", err);
     }
   });
 }
@@ -73,7 +85,7 @@ if (document.getElementById('messagesList')) {
   async function render() {
     const msgs = await fetchMessages();
     const sorted = msgs
-      .filter(m => m.message) // Only show rows with a message
+      .filter(m => m.message)
       .sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
 
     list.innerHTML = '';
