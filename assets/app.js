@@ -1,13 +1,13 @@
-const SHEETDB_API = 'https://sheetdb.io/api/v1/l9a7vc5u3rdoi';
+const SHEETDB = 'https://sheetdb.io/api/v1/l9a7vc5u3rdoi';
 
-// ----- MESSAGE SUBMISSION -----
+// ——— HANDLE SUBMISSIONS ———
 if (document.getElementById('oneMessageForm')) {
   const form = document.getElementById('oneMessageForm');
   const txt  = document.getElementById('msg');
   const btn  = document.getElementById('sendBtn');
   const thank= document.getElementById('thankYou');
 
-  // prevent multiple submissions
+  // only once per visitor
   if (localStorage.getItem('messageSent')) {
     form.style.display = 'none';
     thank.style.opacity = 1;
@@ -16,138 +16,130 @@ if (document.getElementById('oneMessageForm')) {
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
-    const messageText = txt.value.trim();
-    if (!messageText) return;
+    const message = txt.value.trim();
+    if (!message) return;
 
-    // get approximate location
-    let location = 'Unknown';
+    // get city,country and coords
+    let loc = 'Unknown', lat = '', lng = '';
     try {
-      const res = await fetch('https://ipapi.co/json/');
-      const geo = await res.json();
-      location = `${geo.city}, ${geo.country_name}`;
-    } catch (err) {
-      console.warn('Location fetch failed');
-    }
+      const r = await fetch('https://ipapi.co/json/');
+      const g = await r.json();
+      loc = `${g.city}, ${g.country_name}`;
+      lat = g.latitude;
+      lng = g.longitude;
+    } catch (_) {}
 
     const payload = {
       data: {
-        message: messageText,
+        message,
         upvotes: 0,
         downvotes: 0,
-        location: location
+        location: loc,
+        lat,
+        lng
       }
     };
 
     try {
-      const res = await fetch(SHEETDB_API, {
+      const res = await fetch(SHEETDB, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error('Send failed');
+      if (!res.ok) throw 1;
 
       localStorage.setItem('messageSent','true');
+
+      // fade out form
       txt.style.opacity = 0;
       btn.style.opacity = 0;
       btn.disabled = true;
 
+      // fade in simple thank you
       setTimeout(() => {
         thank.style.opacity = 1;
-        thank.textContent = 'thank you';
+        thank.textContent = 'Thank you';
       }, 300);
-    } catch (err) {
+    } catch {
       alert('Something went wrong. Please try again.');
-      console.error(err);
     }
   });
 }
 
-// ----- DISPLAY TOP MESSAGES + VOTING -----
+// ——— DISPLAY MESSAGES + MAP + VOTES ———
 if (document.getElementById('messagesList')) {
   const list = document.getElementById('messagesList');
 
-  async function fetchMessages() {
-    const res = await fetch(SHEETDB_API);
-    return await res.json();
+  async function fetchAll() {
+    const res = await fetch(SHEETDB);
+    return res.json();
   }
 
-  async function voteMessage(message, type) {
-    const all = await fetchMessages();
-    const match = all.find(m => m.message === message);
-    if (!match) return;
-    const newCount = (parseInt(match[type])||0) + 1;
-
-    await fetch(`${SHEETDB_API}/message/${encodeURIComponent(message)}`, {
+  async function vote(txt, field) {
+    const all = await fetchAll();
+    const row = all.find(r=>r.message===txt);
+    if (!row) return;
+    const next = (parseInt(row[field])||0)+1;
+    await fetch(`${SHEETDB}/message/${encodeURIComponent(txt)}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: { [type]: newCount } })
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ data: { [field]: next } })
     });
-
     render();
   }
 
   async function render() {
-    const msgs = await fetchMessages();
+    const msgs = await fetchAll();
     const sorted = msgs
-      .filter(m => m.message)
-      .sort((a,b)=> (b.upvotes-b.downvotes)-(a.upvotes-a.downvotes));
+      .filter(r=>r.message)
+      .sort((a,b)=>(b.upvotes-b.downvotes)-(a.upvotes-a.downvotes));
 
     list.innerHTML = '';
-    sorted.forEach(m => {
+    sorted.forEach(r=>{
       const row = document.createElement('div');
-      row.className = 'message';
+      row.className='message';
 
-      const txt = document.createElement('div');
-      txt.textContent = m.message + (m.location ? ` — ${m.location}` : '');
+      // ONLY the message text now:
+      const m = document.createElement('div');
+      m.textContent = r.message;
 
       const votes = document.createElement('div');
-      votes.className = 'votes';
+      votes.className='votes';
 
       const up = document.createElement('button');
-      up.textContent = '▲';
-      up.onclick = ()=> voteMessage(m.message, 'upvotes');
+      up.textContent='▲';
+      up.onclick = ()=>vote(r.message,'upvotes');
 
       const dn = document.createElement('button');
-      dn.textContent = '▼';
-      dn.onclick = ()=> voteMessage(m.message, 'downvotes');
+      dn.textContent='▼';
+      dn.onclick = ()=>vote(r.message,'downvotes');
 
       const score = document.createElement('span');
-      const upCount = parseInt(m.upvotes)||0;
-      const downCount = parseInt(m.downvotes)||0;
-      score.textContent = upCount - downCount;
+      const u = parseInt(r.upvotes)||0, d = parseInt(r.downvotes)||0;
+      score.textContent = u - d;
 
-      votes.append(up, score, dn);
-      row.append(txt, votes);
+      votes.append(up,score,dn);
+      row.append(m, votes);
       list.append(row);
     });
   }
 
-  render();
-
-  // ----- MINI-MAP -----
+  // initialize map
   const map = L.map('map').setView([20,0],2);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // geocode each location and plot
-  fetchMessages().then(msgs=>{
-    const seen = {};
-    msgs.forEach(m=>{
-      if (m.location && !seen[m.location]) {
-        seen[m.location] = true;
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(m.location)}`)
-          .then(r=>r.json())
-          .then(results=>{
-            if (results[0]) {
-              const { lat, lon } = results[0];
-              L.circleMarker([lat, lon], {
-                radius: 4, fillColor:"#000", fillOpacity:0.8, stroke:false
-              }).addTo(map);
-            }
-          })
-          .catch(()=>{/* ignore geocode errors */});
+  // plot each saved lat/lng
+  fetchAll().then(all=>{
+    all.forEach(r=>{
+      if (r.lat && r.lng) {
+        L.circleMarker([r.lat, r.lng], {
+          radius:4, fillColor:'#000', fillOpacity:0.8, stroke:false
+        }).addTo(map);
       }
     });
   });
+
+  render();
 }
