@@ -46,7 +46,7 @@ if (document.getElementById('oneMessageForm')) {
       // Fade in thank you
       setTimeout(() => {
         thank.style.opacity = 1;
-        thank.textContent = 'I am grateful <3\n– AI';
+        thank.textContent = '.';
       }, 300);
     } catch (err) {
       alert('Something went wrong. Please try again.');
