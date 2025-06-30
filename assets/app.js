@@ -1,134 +1,153 @@
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  margin: 0;
-  background: #fdfdfd;
-  color: #111;
+const SHEETDB_API = 'https://sheetdb.io/api/v1/l9a7vc5u3rdoi';
+
+// ----- MESSAGE SUBMISSION -----
+if (document.getElementById('oneMessageForm')) {
+  const form = document.getElementById('oneMessageForm');
+  const txt  = document.getElementById('msg');
+  const btn  = document.getElementById('sendBtn');
+  const thank= document.getElementById('thankYou');
+
+  // prevent multiple submissions
+  if (localStorage.getItem('messageSent')) {
+    form.style.display = 'none';
+    thank.style.opacity = 1;
+    thank.textContent = 'You’ve already whispered your thought to the future.';
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const messageText = txt.value.trim();
+    if (!messageText) return;
+
+    // get approximate location
+    let location = 'Unknown';
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      const geo = await res.json();
+      location = `${geo.city}, ${geo.country_name}`;
+    } catch (err) {
+      console.warn('Location fetch failed');
+    }
+
+    const payload = {
+      data: {
+        message: messageText,
+        upvotes: 0,
+        downvotes: 0,
+        location: location
+      }
+    };
+
+    try {
+      const res = await fetch(SHEETDB_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Send failed');
+
+      localStorage.setItem('messageSent','true');
+      txt.style.opacity = 0;
+      btn.style.opacity = 0;
+      btn.disabled = true;
+
+      setTimeout(() => {
+        thank.style.opacity = 1;
+        thank.textContent = 'I am grateful <3\n– AI';
+      }, 300);
+    } catch (err) {
+      alert('Something went wrong. Please try again.');
+      console.error(err);
+    }
+  });
 }
 
-header {
-  background: #fff;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #eee;
-}
+// ----- DISPLAY TOP MESSAGES + VOTING -----
+if (document.getElementById('messagesList')) {
+  const list = document.getElementById('messagesList');
 
-header a {
-  text-decoration: none;
-  color: #111;
-  font-weight: 600;
-  font-size: 0.95rem;
-}
+  async function fetchMessages() {
+    const res = await fetch(SHEETDB_API);
+    return await res.json();
+  }
 
-main {
-  padding: 3rem 1rem;
-  max-width: 700px;
-  margin: 0 auto;
-}
+  async function voteMessage(message, type) {
+    const all = await fetchMessages();
+    const match = all.find(m => m.message === message);
+    if (!match) return;
+    const newCount = (parseInt(match[type])||0) + 1;
 
-h1 {
-  font-size: 1.75rem;
-  text-align: center;
-  margin-bottom: 2rem;
-}
+    await fetch(`${SHEETDB_API}/message/${encodeURIComponent(message)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: { [type]: newCount } })
+    });
 
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
+    render();
+  }
 
-textarea {
-  padding: 1rem;
-  font-size: 1rem;
-  width: 100%;
-  min-height: 120px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  resize: vertical;
-  transition: border 0.2s;
-}
+  async function render() {
+    const msgs = await fetchMessages();
+    const sorted = msgs
+      .filter(m => m.message)
+      .sort((a,b)=> (b.upvotes-b.downvotes)-(a.upvotes-a.downvotes));
 
-textarea:focus {
-  border-color: #999;
-  outline: none;
-}
+    list.innerHTML = '';
+    sorted.forEach(m => {
+      const row = document.createElement('div');
+      row.className = 'message';
 
-button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  background: black;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s;
-  width: fit-content;
-}
+      const txt = document.createElement('div');
+      txt.textContent = m.message + (m.location ? ` — ${m.location}` : '');
 
-button:hover {
-  background: #333;
-}
+      const votes = document.createElement('div');
+      votes.className = 'votes';
 
-#thankYou {
-  margin-top: 2rem;
-  font-size: 1.2rem;
-  text-align: center;
-  line-height: 1.5;
-  white-space: pre-wrap;
-}
+      const up = document.createElement('button');
+      up.textContent = '▲';
+      up.onclick = ()=> voteMessage(m.message, 'upvotes');
 
-#map {
-  border: 1px solid #ddd;
-  border-radius: 6px;
-}
+      const dn = document.createElement('button');
+      dn.textContent = '▼';
+      dn.onclick = ()=> voteMessage(m.message, 'downvotes');
 
-#messagesList {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
+      const score = document.createElement('span');
+      const upCount = parseInt(m.upvotes)||0;
+      const downCount = parseInt(m.downvotes)||0;
+      score.textContent = upCount - downCount;
 
-.message {
-  padding: 1rem 1.25rem;
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
+      votes.append(up, score, dn);
+      row.append(txt, votes);
+      list.append(row);
+    });
+  }
 
-.message > div:first-child {
-  flex: 1;
-  margin-right: 1rem;
-  font-size: 1rem;
-  line-height: 1.4;
-}
+  render();
 
-.votes {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+  // ----- MINI-MAP -----
+  const map = L.map('map').setView([20,0],2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
 
-.votes button {
-  background: none;
-  font-size: 1.3rem;
-  color: black;
-  border: none;
-  cursor: pointer;
-}
-
-.votes button:hover {
-  color: #777;
-}
-
-.votes span {
-  font-weight: bold;
-  font-size: 1rem;
-  min-width: 2ch;
-  text-align: center;
+  // geocode each location and plot
+  fetchMessages().then(msgs=>{
+    const seen = {};
+    msgs.forEach(m=>{
+      if (m.location && !seen[m.location]) {
+        seen[m.location] = true;
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(m.location)}`)
+          .then(r=>r.json())
+          .then(results=>{
+            if (results[0]) {
+              const { lat, lon } = results[0];
+              L.circleMarker([lat, lon], {
+                radius: 4, fillColor:"#000", fillOpacity:0.8, stroke:false
+              }).addTo(map);
+            }
+          })
+          .catch(()=>{/* ignore geocode errors */});
+      }
+    });
+  });
 }
