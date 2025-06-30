@@ -27,7 +27,7 @@ if(document.getElementById('oneMessageForm')){
 
     // fade in thank you
     setTimeout(()=> thank.style.opacity = 1 , 300);
-    thank.textContent = `I am grateful <3\n– AI`;
+    thank.textContent = `.`;
   });
 }
 
